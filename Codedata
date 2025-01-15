@@ -1,0 +1,136 @@
+library(tidyverse)
+require(dplyr)
+require(ggplot2)
+require(ggpubr)
+require(gridExtra)
+read.csv(file.choose("imdb"),header = T)
+View(imdb)
+#QUES 1)Ratings of movies:
+library(plotly)
+anu<- ggplot(data = imdb, aes(x = `lister.item.header`, y = rating, group = 1)) +
+  geom_line(color="plum3")+
+  geom_point(size=1,color="plum4")+
+  labs(title = "RATINGS",
+       x="Movies",
+       y="ratings")
+plotly::ggplotly(anu)
+
+
+#Ques 2)what is the correlation bw ratings and votes:
+correlation <- cor(imdb$rating, imdb$votes)
+
+#Ques 3)visualization of above correlation
+convert<-ggplot(data=imdb,aes(x=rating,y=votes))+geom_point(color="springgreen4",size=-1)+geom_abline(intercept = 0,
+                                                                                                 slope = 1)+geom_smooth(method="lm")+
+  labs(title = "comparison",
+       x="ratings",
+       y="votes")
+plotly::ggplotly(convert)
+
+
+#ques 4)time duration of movies:(MIN-MAX)
+p <- ggplot(data = imdb, aes(x = `lister-item-header`, y = runtime, col = factor(runtime))) +
+  geom_point(alpha = 3/5) +
+  labs(title = "Runtime of Movies",
+x="movie",
+y="runtime")+
+  theme(plot.title = element_text(size = 15, color = "maroon"))
+plotly:: ggplotly(p)
+
+#QUES 5)Time duration of max runtime movies:
+reet1<- imdb %>% 
+  group_by(runtime) %>% 
+  summarise(Movies = n())
+max_genre1 <- reet1$runtime[which.max(reet1$Movies)]
+#pairplot:
+
+# Ques 6) Boxplot of the relation between certificate and rating:
+p<-boxplot(certificate ~ rating, data = imdb,
+        main = "Relationship", 
+        xlab = "ratings", ylab = "certificate",
+        col = c("steelblue", "pink", "grey", "grey", "orange"), 
+        border = "black")
+
+#Quantile value of p:
+quantile(imdb$certificate)
+boxplot(imdb$certificate)
+
+
+
+#Ques8)What is the maximum runtime of movies:
+reet1<- imdb %>% 
+  group_by(runtime) %>% 
+  summarise(Movies = n())
+max_genre1 <- reet1$runtime[which.max(reet1$Movies)]
+
+
+#Ques7) what will be the prediction ?
+mrm2=lm(votes~rating+certificate+runtime,data=imdb)
+sales1= -1.034+1.453*200+ 4.283*100+2.979*150
+
+#Ques 9) What is the average value and median of all the votings:
+mean(imdb$votes)
+median(imdb$votes)
+
+#Ques 10) Corrplot of all the numeric columns
+library(corrplot)
+ d2<- imdb[, c("votes","certificate","runtime","rating")]
+correlation_matrix <- cor(d2)
+corrplot(correlation_matrix, method = "shade", addCoef.col = "white", interactive = TRUE)
+#QUES 11)What will be the distribution of genres?
+genre2_distribution <- imdb %>%
+  group_by(genre2) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+ggplot(genre2_distribution, aes(x = reorder(genre2, -count), y = count)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Genre Distribution - Genre 2")
+genre3_distribution <- imdb %>%
+  group_by(genre3) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+ggplot(genre3_distribution, aes(x = reorder(genre3, -count), y = count)) +geom_bar(stat = "identity") +
+  labs(title = "Genre Distribution - Genre 3")
+genre_relationships <- table(imdb$genre2,imdb$genre3)
+heatmap(genre_relationships)
+genre_relationships_df <- as.data.frame(genre_relationships)
+heatmap_plot <- plot_ly(z = ~as.matrix(genre_relationships_df),
+                        x = colnames(genre_relationships_df),
+                        y = rownames(genre_relationships_df),
+                        type = "heatmap")
+heatmap_plot <- heatmap_plot %>% 
+  layout(title = "Genre Relationships - Heatmap",
+         xaxis = list(title = "Genre 3"),
+         yaxis = list(title = "Genre 2"))
+heatmap_plot
+
+#Ques 12) representing genre 2
+reet3<-ggplot(data = imdb, aes(x = genre2)) +
+  geom_bar(fill = "pink3", color = "black") +
+  labs(title = "Genre Distribution", x = "Genre", y = "Count") +
+  theme_minimal()
+plotly::ggplotly(reet3)
+#Ques 13) analysis of each column:
+hist_plot_cer<-ggplot(imdb,aes(x=certificate))+geom_histogram(binwidth=2,fill="plum",color="white")+labs(title = "histogram:certificates",x="certificates",y="frequency")
+hist_plot_run<-ggplot(imdb,aes(x=runtime))+geom_histogram(binwidth=4,fill="steelblue",color="white")+labs(title = "histogram:runtime",x="runtime",y="frequency")
+hist_plot_rat<-ggplot(imdb,aes(x=rating))+geom_histogram(binwidth=2,fill="pink2",color="white")+labs(title = "ratings",x="ratings",y="frequency")
+hist_plot_vote<-ggplot(imdb,aes(x=votes))+geom_histogram(binwidth=5,fill="black",color="white")+labs(title = "histogram:votes",x="votes",y="frequency")
+grid.arrange(hist_plot_cer,hist_plot_run,hist_plot_rat,hist_plot_vote,ncol=2)
+
+#Ques 14)What will be the prediction of votes based on certificate:
+result1<-lm(certificate~votes,data=imdb)
+predict(result1)%>%round(0)
+#Ques 15)SUMMARY:pair plot
+install.packages("devtools")
+library(devtools)
+install.packages("GGally")
+library(GGally)
+columns_of_interest <- c("lister.item.index", "runtime", "rating")
+subset_data1 <- imdb_subset[, columns_of_interest]
+# Set a higher cardinality threshold
+options(ggally_cardinality_threshold = 100) 
+ggpairs(subset_data1)
+
+
+
+
